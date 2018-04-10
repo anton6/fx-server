@@ -12,6 +12,8 @@ Unauthenticated sessions can access the following currency pairs:
 - AUD/USD
 - GBP/JPY
 
+The server uses rooms per provider to emit data (in case additional fx providers need to be added in future).
+
 ```Shell
   npm i && npm start
 ```
