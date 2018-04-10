@@ -4,15 +4,26 @@ const apiConfig = require('./apiConfig')
 const request = require("request")
 const R = require('ramda')
 
-const NAME_SPACE = '/truefx';
+const NAME_SPACE = '/rates';
+const ROOM_TRUEFX = 'truefx';
+const EVENT_NAME_TRUEFX = 'truefx_tick';
 
 module.exports = function (io) {
   const nsp = io.of(NAME_SPACE);
+
+  nsp.on('connection', function(socket) {
+    socket.on('join', function(room) {
+      socket.join(room);
+    });
+
+    socket.on('leave', function(room) {
+      socket.leave(room);
+    });
+  });
+
   setInterval(function () {
-    const nspSockets = io.of(NAME_SPACE).sockets;
-    const totalNspSessions = Object.keys(nspSockets).length;
-    
-    if(totalNspSessions > 0) {
+    const numOfConnected = R.defaultTo({length: 0}, nsp.adapter.rooms[ROOM_TRUEFX]).length
+    if(numOfConnected) {
       requestFXprices(nsp)
     }
   }, 1000)
@@ -25,8 +36,7 @@ module.exports = function (io) {
   function requestFXprices(nsp){
     request(unauthUrl, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        console.log(body)
-        nsp.emit('message', parseBody(body))
+        nsp.in(ROOM_TRUEFX).emit(EVENT_NAME_TRUEFX, parseBody(body));
       } else if(error){
         console.error ("ERROR status code : " + error)
       }
